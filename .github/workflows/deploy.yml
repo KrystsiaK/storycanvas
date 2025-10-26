@@ -1,0 +1,89 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy-backend:
+    name: Deploy Backend to Production
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build backend
+        run: npm run build --workspace=apps/backend
+      
+      - name: Deploy to AWS (Placeholder)
+        run: |
+          echo "Backend deployment would happen here"
+          echo "Options: AWS EKS, Heroku, Railway, Render, etc."
+          echo "Requires: AWS credentials, deployment scripts"
+      
+      # Uncomment when ready to deploy
+      # - name: Configure AWS credentials
+      #   uses: aws-actions/configure-aws-credentials@v2
+      #   with:
+      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws-region: us-east-1
+      
+      # - name: Deploy to EKS
+      #   run: |
+      #     kubectl apply -f k8s/backend-deployment.yml
+      #     kubectl rollout status deployment/storycanvas-backend
+
+  deploy-mobile:
+    name: Build Mobile App
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build mobile app (Placeholder)
+        run: |
+          echo "Mobile app build would happen here"
+          echo "For iOS: requires macOS runner and Apple certificates"
+          echo "For Android: can build APK/AAB on Linux"
+          echo "Options: Expo EAS Build, Fastlane, etc."
+      
+      # Uncomment for Android build
+      # - name: Set up JDK
+      #   uses: actions/setup-java@v3
+      #   with:
+      #     java-version: '17'
+      #     distribution: 'temurin'
+      
+      # - name: Build Android APK
+      #   run: |
+      #     cd apps/mobile/android
+      #     ./gradlew assembleRelease
+      
+      # - name: Upload APK
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: app-release
+      #     path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+
