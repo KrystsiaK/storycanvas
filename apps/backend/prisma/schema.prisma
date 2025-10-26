@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  password  String
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stories   Story[]
+  characters Character[]
+
+  @@map("users")
+}
+
+model Story {
+  id          String   @id @default(uuid())
+  title       String
+  content     String   @db.Text
+  genre       String
+  language    String
+  ageGroup    String
+  theme       String?
+  moralLesson String?
+  audioUrl    String?
+  videoUrl    String?
+  pdfUrl      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId      String
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  characters  StoryCharacter[]
+
+  @@map("stories")
+}
+
+model Character {
+  id          String   @id @default(uuid())
+  name        String
+  description String   @db.Text
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId      String
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  stories     StoryCharacter[]
+
+  @@map("characters")
+}
+
+model StoryCharacter {
+  id          String   @id @default(uuid())
+  role        String   // protagonist, antagonist, sidekick, etc.
+  
+  storyId     String
+  story       Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  
+  characterId String
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@unique([storyId, characterId])
+  @@map("story_characters")
+}
+

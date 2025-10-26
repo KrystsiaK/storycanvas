@@ -28,7 +28,16 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
-// API routes will be added here
+// Import routes
+import { authRoutes } from './routes/auth.routes';
+import { storyRoutes } from './routes/story.routes';
+import { characterRoutes } from './routes/character.routes';
+
+// API routes
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/stories', storyRoutes);
+app.use('/api/v1/characters', characterRoutes);
+
 app.get('/api/v1', (req: Request, res: Response) => {
   res.json({
     message: 'Welcome to StoryCanvas API',
@@ -37,7 +46,7 @@ app.get('/api/v1', (req: Request, res: Response) => {
       health: '/health',
       auth: '/api/v1/auth',
       stories: '/api/v1/stories',
-      users: '/api/v1/users'
+      characters: '/api/v1/characters'
     }
   });
 });
