@@ -1,12 +1,29 @@
 import React from 'react';
 import { View, StyleSheet, Image } from 'react-native';
 import { Button, Text } from 'react-native-paper';
+import { useDispatch } from 'react-redux';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../../navigation/types';
+import { useLoginMutation } from '../../services/api';
+import { setCredentials } from '../../store/slices/authSlice';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Welcome'>;
 
 export const WelcomeScreen = ({ navigation }: Props) => {
+  const dispatch = useDispatch();
+  const [login, { isLoading }] = useLoginMutation();
+  
+  const handleTestLogin = async () => {
+    try {
+      const result = await login({ 
+        email: 'test@example.com', 
+        password: 'password123' 
+      }).unwrap();
+      dispatch(setCredentials(result));
+    } catch (error) {
+      console.error('Test login failed:', error);
+    }
+  };
   return (
     <View style={styles.container}>
       <View style={styles.content}>
@@ -38,6 +55,14 @@ export const WelcomeScreen = ({ navigation }: Props) => {
           contentStyle={styles.buttonContent}
         >
           Sign In
+        </Button>
+        <Button
+          mode="text"
+          onPress={handleTestLogin}
+          loading={isLoading}
+          style={styles.testButton}
+        >
+          Quick Test Login
         </Button>
       </View>
     </View>
@@ -80,6 +105,9 @@ const styles = StyleSheet.create({
   },
   buttonContent: {
     paddingVertical: 8,
+  },
+  testButton: {
+    marginTop: 8,
   },
 });
 

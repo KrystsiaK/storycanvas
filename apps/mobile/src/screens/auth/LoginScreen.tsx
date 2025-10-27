@@ -21,10 +21,17 @@ export const LoginScreen = ({ navigation }: Props) => {
   const handleLogin = async () => {
     try {
       setError('');
+      console.log('🔐 Starting login...');
+      console.log('📧 Email:', email);
       const result = await login({ email, password }).unwrap();
+      console.log('✅ Login successful!', result);
       dispatch(setCredentials(result));
     } catch (err: any) {
-      setError(err?.data?.message || 'Login failed. Please try again.');
+      console.error('❌ Login error:', err);
+      console.error('❌ Error data:', err?.data);
+      console.error('❌ Error message:', err?.message);
+      console.error('❌ Full error:', JSON.stringify(err, null, 2));
+      setError(err?.data?.message || err?.message || 'Login failed. Please try again.');
     }
   };
 

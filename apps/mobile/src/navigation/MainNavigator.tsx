@@ -1,16 +1,19 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { HomeScreen } from '../screens/main/HomeScreen';
 import { CreateScreen } from '../screens/main/CreateScreen';
 import { LibraryScreen } from '../screens/main/LibraryScreen';
 import { ProfileScreen } from '../screens/main/ProfileScreen';
-import type { MainTabParamList } from './types';
+import { StoryDetailScreen } from '../screens/main/StoryDetailScreen';
+import type { MainTabParamList, MainStackParamList } from './types';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
+const Stack = createNativeStackNavigator<MainStackParamList>();
 
-export const MainNavigator = () => {
+const MainTabs = () => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -67,6 +70,19 @@ export const MainNavigator = () => {
         options={{ title: 'Profile' }}
       />
     </Tab.Navigator>
+  );
+};
+
+export const MainNavigator = () => {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="MainTabs" component={MainTabs} />
+      <Stack.Screen 
+        name="StoryDetail" 
+        component={StoryDetailScreen}
+        options={{ presentation: 'card' }}
+      />
+    </Stack.Navigator>
   );
 };
 

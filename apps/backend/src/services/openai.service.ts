@@ -58,7 +58,7 @@ export class OpenAIService {
         n: 1,
       });
 
-      return response.data[0].url || '';
+      return response.data?.[0].url || '';
     } catch (error) {
       console.error('DALL-E API error:', error);
       throw new Error('Failed to generate character image');
