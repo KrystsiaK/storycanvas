@@ -18,7 +18,7 @@ export const authMiddleware = (
     }
 
     const token = authHeader.substring(7);
-    const secret = process.env.JWT_SECRET || 'your-secret-key';
+    const secret = process.env.JWT_SECRET!;
     
     const decoded = jwt.verify(token, secret) as { userId: string };
     req.userId = decoded.userId;

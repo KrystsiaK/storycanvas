@@ -1,9 +1,9 @@
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { OpenAIService } from '../services/openai.service';
+import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 
-const prisma = new PrismaClient();
 const openaiService = new OpenAIService();
 
 export class StoryController {
@@ -43,7 +43,7 @@ export class StoryController {
 
       res.status(201).json(story);
     } catch (error) {
-      console.error('Generate story error:', error);
+      logger.error('Generate story error:', error);
       res.status(500).json({ error: 'Failed to generate story' });
     }
   }
@@ -66,7 +66,7 @@ export class StoryController {
 
       res.json(stories);
     } catch (error) {
-      console.error('Get stories error:', error);
+      logger.error('Get stories error:', error);
       res.status(500).json({ error: 'Failed to fetch stories' });
     }
   }
@@ -93,7 +93,7 @@ export class StoryController {
 
       res.json(story);
     } catch (error) {
-      console.error('Get story error:', error);
+      logger.error('Get story error:', error);
       res.status(500).json({ error: 'Failed to fetch story' });
     }
   }
@@ -121,7 +121,7 @@ export class StoryController {
 
       res.json(story);
     } catch (error) {
-      console.error('Update story error:', error);
+      logger.error('Update story error:', error);
       res.status(500).json({ error: 'Failed to update story' });
     }
   }
@@ -145,7 +145,7 @@ export class StoryController {
 
       res.json({ message: 'Story deleted successfully' });
     } catch (error) {
-      console.error('Delete story error:', error);
+      logger.error('Delete story error:', error);
       res.status(500).json({ error: 'Failed to delete story' });
     }
   }

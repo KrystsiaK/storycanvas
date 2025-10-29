@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { logger } from '../lib/logger';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -43,7 +44,7 @@ export class OpenAIService {
 
       return { title, content };
     } catch (error) {
-      console.error('OpenAI API error:', error);
+      logger.error('OpenAI API error:', error);
       throw new Error('Failed to generate story');
     }
   }
@@ -60,7 +61,7 @@ export class OpenAIService {
 
       return response.data?.[0].url || '';
     } catch (error) {
-      console.error('DALL-E API error:', error);
+      logger.error('DALL-E API error:', error);
       throw new Error('Failed to generate character image');
     }
   }

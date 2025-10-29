@@ -1,9 +1,8 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 
 export class AuthController {
   async register(req: Request, res: Response) {
@@ -45,7 +44,7 @@ export class AuthController {
       });
 
       // Generate JWT token
-      const secret = process.env.JWT_SECRET || 'your-secret-key';
+      const secret = process.env.JWT_SECRET!;
       const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
       const token = jwt.sign({ userId: user.id }, secret, { expiresIn } as jwt.SignOptions);
 
@@ -54,7 +53,7 @@ export class AuthController {
         token,
       });
     } catch (error) {
-      console.error('Register error:', error);
+      logger.error('Register error:', error);
       res.status(500).json({ error: 'Registration failed' });
     }
   }
@@ -81,7 +80,7 @@ export class AuthController {
       }
 
       // Generate JWT token
-      const secret = process.env.JWT_SECRET || 'your-secret-key';
+      const secret = process.env.JWT_SECRET!;
       const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
       const token = jwt.sign({ userId: user.id }, secret, { expiresIn } as jwt.SignOptions);
 
@@ -95,7 +94,7 @@ export class AuthController {
         token,
       });
     } catch (error) {
-      console.error('Login error:', error);
+      logger.error('Login error:', error);
       res.status(500).json({ error: 'Login failed' });
     }
   }
@@ -108,7 +107,7 @@ export class AuthController {
         return res.status(400).json({ error: 'Token is required' });
       }
 
-      const secret = process.env.JWT_SECRET || 'your-secret-key';
+      const secret = process.env.JWT_SECRET!;
       const decoded = jwt.verify(token, secret) as { userId: string };
 
       // Generate new token

@@ -2,9 +2,14 @@ import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import { logger } from './lib/logger';
+import { validateEnv } from './lib/validateEnv';
 
 // Load environment variables
 dotenv.config();
+
+// Validate required environment variables
+validateEnv();
 
 const app: Application = express();
 const PORT = process.env.PORT || 3000;
@@ -61,7 +66,7 @@ app.use((req: Request, res: Response) => {
 
 // Error handler
 app.use((err: Error, req: Request, res: Response, next: any) => {
-  console.error(err.stack);
+  logger.error(`${err.name}: ${err.message}\n${err.stack}`);
   res.status(500).json({
     error: 'Internal Server Error',
     message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
@@ -70,9 +75,9 @@ app.use((err: Error, req: Request, res: Response, next: any) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 StoryCanvas Backend running on port ${PORT}`);
-  console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+  logger.info(`🚀 StoryCanvas Backend running on port ${PORT}`);
+  logger.info(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
+  logger.info(`🔗 Health check: http://localhost:${PORT}/health`);
 });
 
 export default app;

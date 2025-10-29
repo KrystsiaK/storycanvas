@@ -1,9 +1,9 @@
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { OpenAIService } from '../services/openai.service';
+import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 
-const prisma = new PrismaClient();
 const openaiService = new OpenAIService();
 
 export class CharacterController {
@@ -21,7 +21,7 @@ export class CharacterController {
       try {
         imageUrl = await openaiService.generateCharacterImage(description);
       } catch (error) {
-        console.error('Failed to generate character image:', error);
+        logger.error('Failed to generate character image:', error);
         // Continue without image
       }
 
@@ -37,7 +37,7 @@ export class CharacterController {
 
       res.status(201).json(character);
     } catch (error) {
-      console.error('Generate character error:', error);
+      logger.error('Generate character error:', error);
       res.status(500).json({ error: 'Failed to generate character' });
     }
   }
@@ -53,7 +53,7 @@ export class CharacterController {
 
       res.json(characters);
     } catch (error) {
-      console.error('Get characters error:', error);
+      logger.error('Get characters error:', error);
       res.status(500).json({ error: 'Failed to fetch characters' });
     }
   }
@@ -73,7 +73,7 @@ export class CharacterController {
 
       res.json(character);
     } catch (error) {
-      console.error('Get character error:', error);
+      logger.error('Get character error:', error);
       res.status(500).json({ error: 'Failed to fetch character' });
     }
   }
@@ -97,7 +97,7 @@ export class CharacterController {
 
       res.json({ message: 'Character deleted successfully' });
     } catch (error) {
-      console.error('Delete character error:', error);
+      logger.error('Delete character error:', error);
       res.status(500).json({ error: 'Failed to delete character' });
     }
   }
