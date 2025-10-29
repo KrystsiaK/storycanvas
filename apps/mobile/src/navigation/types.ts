@@ -2,7 +2,7 @@ import type { NavigatorScreenParams } from '@react-navigation/native';
 
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
-  Main: NavigatorScreenParams<MainStackParamList>;
+  Main: NavigatorScreenParams<MainTabParamList>;
 };
 
 export type AuthStackParamList = {
@@ -16,25 +16,6 @@ export type MainTabParamList = {
   Create: undefined;
   Library: undefined;
   Profile: undefined;
-};
-
-export type MainStackParamList = {
-  MainTabs: NavigatorScreenParams<MainTabParamList>;
-  StoryDetail: {
-    story: {
-      id: string;
-      title: string;
-      content: string;
-      genre: string;
-      language: string;
-      ageGroup: string;
-      theme?: string;
-      moralLesson?: string;
-      audioUrl?: string | null;
-      videoUrl?: string | null;
-      pdfUrl?: string | null;
-    };
-  };
 };
 
 export type CreateStackParamList = {

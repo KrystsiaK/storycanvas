@@ -15,8 +15,17 @@
       "bundleIdentifier": "com.storycanvas.app"
     },
     "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      },
       "package": "com.storycanvas.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
     }
   }
 }
+
+
+
 

@@ -1,16 +1,12 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, TextInput, Button, Card, Chip, SegmentedButtons } from 'react-native-paper';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useDispatch } from 'react-redux';
+import { MaterialIcons } from '@expo/vector-icons';
 
 import { useGenerateStoryMutation } from '../../services/api';
 import { setCurrentStory, setGenerating } from '../../store/slices/storySlice';
-import { selectIsAuthenticated, selectAuthToken } from '../../store/slices/authSlice';
-import type { MainStackParamList } from '../../navigation/types';
-
-type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
+// import { DrawingCanvas } from '../../components/DrawingCanvas';
 
 const GENRES = ['Adventure', 'Fantasy', 'Mystery', 'Friendship', 'Educational', 'Bedtime'];
 const LANGUAGES = ['English', 'Spanish', 'French', 'German', 'Russian', 'Ukrainian'];
@@ -22,10 +18,7 @@ const AGE_GROUPS = [
 
 export const CreateScreen = () => {
   const dispatch = useDispatch();
-  const navigation = useNavigation<NavigationProp>();
   const [generateStory, { isLoading }] = useGenerateStoryMutation();
-  const isAuthenticated = useSelector(selectIsAuthenticated);
-  const token = useSelector(selectAuthToken);
   
   const [characterName, setCharacterName] = useState('');
   const [characterDescription, setCharacterDescription] = useState('');
@@ -34,25 +27,11 @@ export const CreateScreen = () => {
   const [ageGroup, setAgeGroup] = useState('6-8');
   const [storyTheme, setStoryTheme] = useState('');
   const [moralLesson, setMoralLesson] = useState('');
+  const [showDrawingCanvas, setShowDrawingCanvas] = useState(false);
 
   const handleGenerate = async () => {
-    console.log('=== Generate Story Button Pressed ===');
-    console.log('Is Authenticated:', isAuthenticated);
-    console.log('Has Token:', !!token);
-    console.log('Character Name:', characterName);
-    console.log('Character Description:', characterDescription);
-    console.log('Genre:', selectedGenre);
-    console.log('Language:', selectedLanguage);
-    console.log('Age Group:', ageGroup);
-    
-    if (!isAuthenticated || !token) {
-      Alert.alert('Not Authenticated', 'Please log in to generate stories');
-      return;
-    }
-    
     try {
       dispatch(setGenerating(true));
-      console.log('Calling API...');
       
       const result = await generateStory({
         character: {
@@ -66,23 +45,12 @@ export const CreateScreen = () => {
         moralLesson,
       }).unwrap();
       
-      console.log('Story generated successfully!', result);
       dispatch(setCurrentStory(result));
-      
-      // Navigate to story detail
-      navigation.navigate('StoryDetail', { story: result });
-    } catch (error: any) {
-      console.error('=== Failed to generate story ===');
-      console.error('Error object:', error);
-      console.error('Error status:', error?.status);
-      console.error('Error data:', error?.data);
-      console.error('Error message:', error?.message);
-      
-      const errorMessage = error?.data?.error || error?.message || 'Failed to generate story';
-      Alert.alert('Error', errorMessage);
+      // Navigate to story view
+    } catch (error) {
+      console.error('Failed to generate story:', error);
     } finally {
       dispatch(setGenerating(false));
-      console.log('=== Story generation finished ===');
     }
   };
 
@@ -124,12 +92,13 @@ export const CreateScreen = () => {
           />
           
           <Button
-            mode="outlined"
-            icon="draw"
+            mode="contained"
+            icon="brush"
             style={styles.drawButton}
-            disabled
+            onPress={() => setShowDrawingCanvas(true)}
+            buttonColor="#6366f1"
           >
-            Draw Your Hero (Coming Soon)
+            🎨 Draw Your Hero
           </Button>
         </Card.Content>
       </Card>
@@ -221,6 +190,15 @@ export const CreateScreen = () => {
       >
         Generate Story
       </Button>
+
+      {/* <DrawingCanvas
+        visible={showDrawingCanvas}
+        onClose={() => setShowDrawingCanvas(false)}
+        onSave={(imagePath) => {
+          console.log('Drawing saved:', imagePath);
+          setShowDrawingCanvas(false);
+        }}
+      /> */}
     </ScrollView>
   );
 };
