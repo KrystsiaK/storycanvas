@@ -1,19 +1,16 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { HomeScreen } from '../screens/main/HomeScreen';
 import { CreateScreen } from '../screens/main/CreateScreen';
 import { LibraryScreen } from '../screens/main/LibraryScreen';
 import { ProfileScreen } from '../screens/main/ProfileScreen';
-import { StoryDetailScreen } from '../screens/main/StoryDetailScreen';
-import type { MainTabParamList, MainStackParamList } from './types';
+import type { MainTabParamList } from './types';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
-const Stack = createNativeStackNavigator<MainStackParamList>();
 
-const MainTabs = () => {
+export const MainNavigator = () => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -37,7 +34,7 @@ const MainTabs = () => {
               iconName = 'circle';
           }
 
-          return <Icon name={iconName} size={size} color={color} />;
+          return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: '#FF6B9D',
         tabBarInactiveTintColor: '#999999',
@@ -70,19 +67,6 @@ const MainTabs = () => {
         options={{ title: 'Profile' }}
       />
     </Tab.Navigator>
-  );
-};
-
-export const MainNavigator = () => {
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="MainTabs" component={MainTabs} />
-      <Stack.Screen 
-        name="StoryDetail" 
-        component={StoryDetailScreen}
-        options={{ presentation: 'card' }}
-      />
-    </Stack.Navigator>
   );
 };
 

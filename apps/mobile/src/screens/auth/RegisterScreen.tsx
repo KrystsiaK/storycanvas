@@ -24,10 +24,6 @@ export const RegisterScreen = ({ navigation }: Props) => {
     try {
       setError('');
       
-      console.log('🔐 Starting registration...');
-      console.log('📧 Email:', email);
-      console.log('👤 Name:', name);
-      
       if (password !== confirmPassword) {
         setError('Passwords do not match');
         return;
@@ -39,14 +35,9 @@ export const RegisterScreen = ({ navigation }: Props) => {
       }
 
       const result = await register({ name, email, password }).unwrap();
-      console.log('✅ Registration successful!', result);
       dispatch(setCredentials(result));
     } catch (err: any) {
-      console.error('❌ Registration error:', err);
-      console.error('❌ Error data:', err?.data);
-      console.error('❌ Error message:', err?.message);
-      console.error('❌ Full error:', JSON.stringify(err, null, 2));
-      setError(err?.data?.message || err?.message || 'Registration failed. Please try again.');
+      setError(err?.data?.message || 'Registration failed. Please try again.');
     }
   };
 

@@ -46,11 +46,8 @@ export class AuthController {
 
       // Generate JWT token
       const secret = process.env.JWT_SECRET || 'your-secret-key';
-      const token = jwt.sign(
-        { userId: user.id },
-        secret,
-        { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions
-      );
+      const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+      const token = jwt.sign({ userId: user.id }, secret, { expiresIn } as jwt.SignOptions);
 
       res.status(201).json({
         user,
@@ -85,11 +82,8 @@ export class AuthController {
 
       // Generate JWT token
       const secret = process.env.JWT_SECRET || 'your-secret-key';
-      const token = jwt.sign(
-        { userId: user.id },
-        secret,
-        { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions
-      );
+      const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+      const token = jwt.sign({ userId: user.id }, secret, { expiresIn } as jwt.SignOptions);
 
       res.json({
         user: {
@@ -118,11 +112,8 @@ export class AuthController {
       const decoded = jwt.verify(token, secret) as { userId: string };
 
       // Generate new token
-      const newToken = jwt.sign(
-        { userId: decoded.userId },
-        secret,
-        { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions
-      );
+      const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+      const newToken = jwt.sign({ userId: decoded.userId }, secret, { expiresIn } as jwt.SignOptions);
 
       res.json({ token: newToken });
     } catch (error) {

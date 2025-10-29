@@ -1,11 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { RootState } from '../store';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || process.env.API_BASE_URL || 'http://localhost:3000/api/v1';
-
-console.log('🌐 API_BASE_URL:', API_BASE_URL);
-console.log('🌐 process.env.EXPO_PUBLIC_API_BASE_URL:', process.env.EXPO_PUBLIC_API_BASE_URL);
-console.log('🌐 process.env.API_BASE_URL:', process.env.API_BASE_URL);
+const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000/api/v1';
 
 export const api = createApi({
   reducerPath: 'api',

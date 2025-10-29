@@ -2,15 +2,11 @@ import React, { useState } from 'react';
 import { View, StyleSheet, FlatList } from 'react-native';
 import { Text, Card, Searchbar, Chip, FAB } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { useGetStoriesQuery } from '../../services/api';
-import type { MainStackParamList } from '../../navigation/types';
-
-type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
 
 export const LibraryScreen = () => {
-  const navigation = useNavigation<NavigationProp>();
+  const navigation = useNavigation();
   const { data: stories, isLoading, refetch } = useGetStoriesQuery(undefined);
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -26,10 +22,7 @@ export const LibraryScreen = () => {
   const genres = ['All', 'Adventure', 'Fantasy', 'Mystery', 'Friendship'];
 
   const renderStoryCard = ({ item }: { item: any }) => (
-    <Card 
-      style={styles.storyCard} 
-      onPress={() => navigation.navigate('StoryDetail', { story: item })}
-    >
+    <Card style={styles.storyCard} onPress={() => {}}>
       <Card.Content>
         <View style={styles.cardHeader}>
           <Text variant="titleLarge" style={styles.storyTitle}>

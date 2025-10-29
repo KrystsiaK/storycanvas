@@ -1,18 +1,14 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, Image } from 'react-native';
 import { Text, Card, Button, FAB } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSelector } from 'react-redux';
 
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { useGetStoriesQuery } from '../../services/api';
-import type { MainStackParamList } from '../../navigation/types';
-
-type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
 
 export const HomeScreen = () => {
-  const navigation = useNavigation<NavigationProp>();
+  const navigation = useNavigation();
   const user = useSelector(selectCurrentUser);
   const { data: stories, isLoading } = useGetStoriesQuery(undefined);
 
@@ -56,19 +52,14 @@ export const HomeScreen = () => {
             <Text>Loading...</Text>
           ) : stories && stories.length > 0 ? (
             stories.slice(0, 3).map((story: any) => (
-              <TouchableOpacity 
-                key={story.id}
-                onPress={() => navigation.navigate('StoryDetail', { story })}
-              >
-                <Card style={styles.storyCard}>
-                  <Card.Content>
-                    <Text variant="titleMedium">{story.title}</Text>
-                    <Text variant="bodySmall" numberOfLines={2}>
-                      {story.content}
-                    </Text>
-                  </Card.Content>
-                </Card>
-              </TouchableOpacity>
+              <Card key={story.id} style={styles.storyCard}>
+                <Card.Content>
+                  <Text variant="titleMedium">{story.title}</Text>
+                  <Text variant="bodySmall" numberOfLines={2}>
+                    {story.content}
+                  </Text>
+                </Card.Content>
+              </Card>
             ))
           ) : (
             <Card style={styles.emptyCard}>
