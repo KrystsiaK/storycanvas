@@ -1,12 +1,13 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import bcrypt from 'bcrypt';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
+import { AuthRequest } from '../middleware/auth.middleware';
 
 export class ProfileController {
-  async getProfile(req: Request, res: Response) {
+  async getProfile(req: AuthRequest, res: Response) {
     try {
-      const userId = req.user?.userId;
+      const userId = req.userId;
 
       const user = await prisma.user.findUnique({
         where: { id: userId },
@@ -31,9 +32,9 @@ export class ProfileController {
     }
   }
 
-  async updateProfile(req: Request, res: Response) {
+  async updateProfile(req: AuthRequest, res: Response) {
     try {
-      const userId = req.user?.userId;
+      const userId = req.userId;
       const { name, email, avatar, currentPassword, newPassword } = req.body;
 
       // Check if user exists
@@ -93,9 +94,9 @@ export class ProfileController {
     }
   }
 
-  async deleteAccount(req: Request, res: Response) {
+  async deleteAccount(req: AuthRequest, res: Response) {
     try {
-      const userId = req.user?.userId;
+      const userId = req.userId;
       const { password } = req.body;
 
       // Get user with password
