@@ -2,8 +2,10 @@ import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import hpp from 'hpp';
 import { logger } from './lib/logger';
 import { validateEnv } from './lib/validateEnv';
+import { apiLimiter } from './middleware/rateLimiter.middleware';
 
 // Load environment variables
 dotenv.config();
@@ -14,14 +16,44 @@ validateEnv();
 const app: Application = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(helmet());
+// Security Middleware
+// Helmet - Set security HTTP headers
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+    },
+  },
+  hsts: {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true,
+  },
+}));
+
+// CORS configuration
 app.use(cors({
   origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
   credentials: true
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+// HTTP Parameter Pollution prevention
+app.use(hpp());
+
+// Global rate limiter
+app.use('/api/', apiLimiter);
+
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// XSS Protection and NoSQL Injection prevention
+import { sanitizeInput, preventNoSQLInjection } from './middleware/sanitize.middleware';
+app.use(sanitizeInput);
+app.use(preventNoSQLInjection);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
