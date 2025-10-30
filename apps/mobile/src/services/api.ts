@@ -15,7 +15,7 @@ export const api = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Story', 'User'],
+  tagTypes: ['Story', 'User', 'Profile'],
   endpoints: (builder) => ({
     // Auth endpoints
     login: builder.mutation({
@@ -30,6 +30,27 @@ export const api = createApi({
         url: '/auth/register',
         method: 'POST',
         body: userData,
+      }),
+    }),
+    
+    // Profile endpoints
+    getProfile: builder.query({
+      query: () => '/profile',
+      providesTags: ['Profile'],
+    }),
+    updateProfile: builder.mutation({
+      query: (profileData) => ({
+        url: '/profile',
+        method: 'PATCH',
+        body: profileData,
+      }),
+      invalidatesTags: ['Profile'],
+    }),
+    deleteAccount: builder.mutation({
+      query: (data) => ({
+        url: '/profile',
+        method: 'DELETE',
+        body: data,
       }),
     }),
     
@@ -80,6 +101,9 @@ export const api = createApi({
 export const {
   useLoginMutation,
   useRegisterMutation,
+  useGetProfileQuery,
+  useUpdateProfileMutation,
+  useDeleteAccountMutation,
   useGenerateStoryMutation,
   useGetStoriesQuery,
   useGetStoryQuery,

@@ -1,18 +1,35 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, Avatar, List, Button, Card, Divider } from 'react-native-paper';
-import { useDispatch, useSelector } from 'react-redux';
+import { Text, Avatar, List, Button, Card, Divider, ActivityIndicator } from 'react-native-paper';
+import { useDispatch } from 'react-redux';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { selectCurrentUser } from '../../store/slices/authSlice';
 import { logout } from '../../store/slices/authSlice';
+import { useGetProfileQuery } from '../../services/api';
 
-export const ProfileScreen = () => {
+type RootStackParamList = {
+  Profile: undefined;
+  EditProfile: undefined;
+};
+
+type Props = NativeStackScreenProps<RootStackParamList, 'Profile'>;
+
+export const ProfileScreen = ({ navigation }: Props) => {
   const dispatch = useDispatch();
-  const user = useSelector(selectCurrentUser);
+  const { data: profileData, isLoading } = useGetProfileQuery();
+  const user = profileData?.user;
 
   const handleLogout = () => {
     dispatch(logout());
   };
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FF6B9D" />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -70,7 +87,7 @@ export const ProfileScreen = () => {
             title="Edit Profile"
             left={(props) => <List.Icon {...props} icon="account-edit" />}
             right={(props) => <List.Icon {...props} icon="chevron-right" />}
-            onPress={() => {}}
+            onPress={() => navigation.navigate('EditProfile')}
           />
           <List.Item
             title="Preferences"
@@ -131,6 +148,12 @@ export const ProfileScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F8F9FA',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: '#F8F9FA',
   },
   content: {

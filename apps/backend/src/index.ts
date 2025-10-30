@@ -69,11 +69,15 @@ app.get('/health', (req: Request, res: Response) => {
 import { authRoutes } from './routes/auth.routes';
 import { storyRoutes } from './routes/story.routes';
 import { characterRoutes } from './routes/character.routes';
+import { profileRoutes } from './routes/profile.routes';
+import { pdfRoutes } from './routes/pdf.routes';
 
 // API routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/stories', storyRoutes);
 app.use('/api/v1/characters', characterRoutes);
+app.use('/api/v1/profile', profileRoutes);
+app.use('/api/v1/pdf', pdfRoutes);
 
 app.get('/api/v1', (req: Request, res: Response) => {
   res.json({

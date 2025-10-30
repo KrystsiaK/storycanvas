@@ -6,7 +6,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { useGenerateStoryMutation } from '../../services/api';
 import { setCurrentStory, setGenerating } from '../../store/slices/storySlice';
-// import { DrawingCanvas } from '../../components/DrawingCanvas';
+import { DrawingCanvas } from '../../components/DrawingCanvas';
 
 const GENRES = ['Adventure', 'Fantasy', 'Mystery', 'Friendship', 'Educational', 'Bedtime'];
 const LANGUAGES = ['English', 'Spanish', 'French', 'German', 'Russian', 'Ukrainian'];
@@ -28,6 +28,7 @@ export const CreateScreen = () => {
   const [storyTheme, setStoryTheme] = useState('');
   const [moralLesson, setMoralLesson] = useState('');
   const [showDrawingCanvas, setShowDrawingCanvas] = useState(false);
+  const [characterDrawing, setCharacterDrawing] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     try {
@@ -191,14 +192,30 @@ export const CreateScreen = () => {
         Generate Story
       </Button>
 
-      {/* <DrawingCanvas
-        visible={showDrawingCanvas}
-        onClose={() => setShowDrawingCanvas(false)}
-        onSave={(imagePath) => {
-          console.log('Drawing saved:', imagePath);
-          setShowDrawingCanvas(false);
-        }}
-      /> */}
+      {showDrawingCanvas && (
+        <View style={styles.drawingModal}>
+          <Card style={styles.drawingCard}>
+            <Card.Title
+              title="Draw Your Character"
+              subtitle="Use your finger to draw!"
+              right={(props) => (
+                <Button onPress={() => setShowDrawingCanvas(false)}>
+                  Close
+                </Button>
+              )}
+            />
+            <Card.Content>
+              <DrawingCanvas
+                onSave={(drawingData) => {
+                  setCharacterDrawing(drawingData);
+                  setShowDrawingCanvas(false);
+                }}
+                onClear={() => setCharacterDrawing(null)}
+              />
+            </Card.Content>
+          </Card>
+        </View>
+      )}
     </ScrollView>
   );
 };
@@ -207,6 +224,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8F9FA',
+  },
+  drawingModal: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+    zIndex: 1000,
+  },
+  drawingCard: {
+    width: '100%',
+    maxWidth: 500,
+    backgroundColor: '#FFFFFF',
   },
   content: {
     padding: 16,

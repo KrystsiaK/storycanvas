@@ -22,7 +22,10 @@ export const LibraryScreen = () => {
   const genres = ['All', 'Adventure', 'Fantasy', 'Mystery', 'Friendship'];
 
   const renderStoryCard = ({ item }: { item: any }) => (
-    <Card style={styles.storyCard} onPress={() => {}}>
+    <Card 
+      style={styles.storyCard} 
+      onPress={() => navigation.navigate('StoryDetail' as never, { storyId: item.id } as never)}
+    >
       <Card.Content>
         <View style={styles.cardHeader}>
           <Text variant="titleLarge" style={styles.storyTitle}>
