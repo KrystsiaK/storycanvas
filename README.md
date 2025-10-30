@@ -1,172 +1,224 @@
-# StoryCanvas
+# 🎨 StoryCanvas
 
-**AI-powered interactive storytelling studio for families - where children's imagination comes to life**
+AI-powered storytelling app for children. Create magical, personalized stories with custom characters, illustrations, and multiple languages.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![React Native](https://img.shields.io/badge/React%20Native-0.73-blue.svg)](https://reactnative.dev/)
-[![Node.js](https://img.shields.io/badge/Node.js-20.x-green.svg)](https://nodejs.org/)
+[![CI/CD](https://github.com/yourusername/storycanvas/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/storycanvas/actions)
 
-## 🎨 Overview
+## 📱 Features
 
-StoryCanvas is an innovative mobile application that transforms children's creativity into magical, interactive adventures. Unlike traditional story generators, StoryCanvas is a creative studio where families co-create personalized tales that adapt, respond, and come alive across multiple formats.
+- **AI Story Generation**: GPT-4o-mini powered story creation
+- **Custom Characters**: Draw and describe your own heroes
+- **Multi-language**: Stories in 8+ languages
+- **Age-appropriate**: Content tailored for different age groups (3-15 years)
+- **PDF Export**: Beautiful story PDFs for sharing
+- **Profile Management**: User accounts with story library
+- **Offline Support**: Redux persist for mobile app
 
-### Key Features
+## 🏗️ Architecture
 
-- **Creative Character Creation**: Draw your hero, upload photos, or describe characters in detail
-- **Interactive Storytelling**: Real-time branching narratives that respond to children's choices
-- **Multi-Format Output**: Read, listen, watch, print, or order physical hardcover books
-- **Family Co-Creation**: Collaborative creation mode for parents and children
-- **Educational Integration**: Vocabulary building, moral lessons, and reading comprehension
-- **Multi-Language Support**: Stories in 50+ languages with translation toggle
+**Monorepo Structure:**
+- `apps/backend` - Express.js REST API
+- `apps/mobile` - React Native (Expo) mobile app
+
+**Tech Stack:**
+- **Backend**: Node.js, Express, TypeScript, Prisma, PostgreSQL
+- **Mobile**: React Native, Expo, Redux Toolkit, RTK Query
+- **AI**: OpenAI GPT-4o-mini, DALL-E 3
+- **Infrastructure**: Docker, Redis (optional caching)
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js 18+
+- Docker & Docker Compose (recommended)
+- PostgreSQL 15+ (or use Docker)
+- OpenAI API key
+
+### Development Setup
+
+1. **Clone the repository**
+```bash
+git clone https://github.com/yourusername/storycanvas.git
+cd storycanvas
+```
+
+2. **Install dependencies**
+```bash
+npm install
+```
+
+3. **Setup environment variables**
+```bash
+# Copy example env files
+cp apps/backend/.env.example apps/backend/.env
+
+# Edit .env with your credentials
+# Required: DATABASE_URL, JWT_SECRET, OPENAI_API_KEY
+```
+
+4. **Start with Docker (recommended)**
+```bash
+# Start all services (PostgreSQL, Redis, Backend)
+docker-compose up -d
+
+# View logs
+docker-compose logs -f backend
+```
+
+5. **Or start manually**
+```bash
+# Start PostgreSQL (if not using Docker)
+# Then run migrations
+cd apps/backend
+npx prisma migrate deploy
+npx prisma generate
+
+# Start backend
+npm run dev
+
+# In another terminal, start mobile
+cd apps/mobile
+npm start
+```
+
+## 🧪 Testing
+
+```bash
+# Backend tests
+cd apps/backend
+npm test                 # Unit tests
+npm run test:e2e         # E2E tests
+npm run test:coverage    # Coverage report
+
+# Mobile tests
+cd apps/mobile
+npm test
+```
+
+**Test Results:**
+- Backend: 82/82 tests ✅
+- Mobile: 9/9 tests ✅
+
+## 🐳 Docker Deployment
+
+### Production Build
+
+```bash
+# Build and start all services
+docker-compose up -d
+
+# Check health
+docker-compose ps
+curl http://localhost:3000/health
+```
+
+### Environment Variables
+
+See `.env.example` for all available options. Key variables:
+
+- `DATABASE_URL` - PostgreSQL connection string
+- `JWT_SECRET` - JWT signing key (min 32 chars)
+- `OPENAI_API_KEY` - OpenAI API key
+- `REDIS_ENABLED` - Enable Redis caching (default: false)
+- `ALLOWED_ORIGINS` - CORS allowed origins
+
+## 📊 Performance
+
+- **Database Indexes**: Optimized queries for userId, createdAt, genre
+- **Redis Caching**: Optional caching layer (3-10 min TTL)
+- **Pagination**: Efficient loading of large story lists
+- **Rate Limiting**: 
+  - Auth endpoints: 5 req/15min
+  - Story generation: 10 req/hour
+  - Global API: 100 req/15min
+
+## 🔒 Security
+
+- **JWT Authentication**: Secure token-based auth
+- **Password Hashing**: bcrypt with salt rounds
+- **Input Validation**: Joi schemas for all endpoints
+- **XSS Protection**: Input sanitization
+- **NoSQL Injection Prevention**: MongoDB operator filtering
+- **Security Headers**: Helmet.js (CSP, HSTS, etc.)
+- **Rate Limiting**: Express-rate-limit
+- **CORS**: Configurable allowed origins
+
+See [SECURITY.md](apps/backend/SECURITY.md) for details.
 
 ## 📁 Project Structure
-
-This is a monorepo containing both the mobile app and backend services:
 
 ```
 storycanvas/
 ├── apps/
-│   ├── mobile/          # React Native mobile application
-│   └── backend/         # Node.js backend API
-├── packages/
-│   └── shared/          # Shared utilities and types
-├── docs/                # Documentation and design files
-├── .github/
-│   └── workflows/       # CI/CD pipelines
-└── README.md
+│   ├── backend/
+│   │   ├── prisma/              # Database schema & migrations
+│   │   ├── src/
+│   │   │   ├── controllers/     # Request handlers
+│   │   │   ├── routes/          # API routes
+│   │   │   ├── services/        # Business logic (OpenAI)
+│   │   │   ├── middleware/      # Auth, validation, security
+│   │   │   ├── validators/      # Joi schemas
+│   │   │   ├── lib/             # Redis, Prisma, Logger
+│   │   │   └── __tests__/       # Unit & E2E tests
+│   │   ├── Dockerfile
+│   │   └── package.json
+│   └── mobile/
+│       ├── src/
+│       │   ├── components/      # DrawingCanvas, etc.
+│       │   ├── screens/         # App screens
+│       │   ├── navigation/      # React Navigation
+│       │   ├── store/           # Redux store & slices
+│       │   ├── services/        # RTK Query API
+│       │   └── __tests__/       # Component tests
+│       └── package.json
+├── docker-compose.yml
+├── .github/workflows/           # CI/CD pipelines
+└── package.json
 ```
 
-## 🚀 Getting Started
+## 🔧 API Endpoints
 
-### Prerequisites
+### Authentication
+- `POST /api/v1/auth/register` - Register new user
+- `POST /api/v1/auth/login` - Login user
+- `POST /api/v1/auth/refresh` - Refresh token
+- `POST /api/v1/auth/logout` - Logout user
 
-- Node.js 20.x or higher
-- npm or pnpm
-- React Native development environment ([setup guide](https://reactnative.dev/docs/environment-setup))
-- PostgreSQL 14+ (for backend)
-- Redis (for caching)
+### Stories
+- `POST /api/v1/stories/generate` - Generate new story
+- `GET /api/v1/stories?page=1&limit=10` - Get user stories (paginated)
+- `GET /api/v1/stories/:id` - Get single story
+- `PATCH /api/v1/stories/:id` - Update story
+- `DELETE /api/v1/stories/:id` - Delete story
 
-### Installation
+### Profile
+- `GET /api/v1/profile` - Get user profile
+- `PATCH /api/v1/profile` - Update profile
+- `DELETE /api/v1/profile` - Delete account
 
-1. Clone the repository:
-```bash
-git clone https://github.com/KrystsiaK/storycanvas.git
-cd storycanvas
-```
-
-2. Install dependencies:
-```bash
-npm install
-# or
-pnpm install
-```
-
-3. Set up environment variables:
-```bash
-cp apps/backend/.env.example apps/backend/.env
-cp apps/mobile/.env.example apps/mobile/.env
-```
-
-4. Start the backend:
-```bash
-cd apps/backend
-npm run dev
-```
-
-5. Start the mobile app:
-```bash
-cd apps/mobile
-npm run ios    # for iOS
-npm run android # for Android
-```
-
-## 🛠️ Technology Stack
-
-### Mobile App
-- **Framework**: React Native 0.73
-- **State Management**: Redux Toolkit
-- **Data Fetching**: RTK Query
-- **UI Components**: React Native Paper + Custom Components
-- **Navigation**: React Navigation
-
-### Backend
-- **Runtime**: Node.js 20.x
-- **Framework**: Express.js
-- **Database**: PostgreSQL with Prisma ORM
-- **Job Queue**: RabbitMQ
-- **Cache**: Redis
-- **AI Services**: OpenAI GPT-4o-mini, DALL-E 3, ElevenLabs
-
-### Infrastructure
-- **Cloud**: AWS (EKS, S3, RDS)
-- **CDN**: Cloudflare
-- **CI/CD**: GitHub Actions
-- **Monitoring**: Sentry
-- **Analytics**: Mixpanel
-
-## 📖 Documentation
-
-Detailed documentation is available in the `docs/` directory:
-
-- [Market Research](docs/market_research.md)
-- [Product Concept](docs/product_concept.md)
-- [Design Document](docs/design_document.md)
-- [Technology Stack](docs/technology_stack.md)
-- [API Documentation](docs/api.md) *(coming soon)*
-- [Deployment Guide](docs/deployment.md) *(coming soon)*
+### PDF Export
+- `GET /api/v1/pdf/story/:id` - Download story PDF
+- `GET /api/v1/pdf/collection` - Download all stories PDF
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📄 License
+## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
 
-## 🌟 Roadmap
+## 👥 Authors
 
-### Phase 1: MVP (Months 1-4)
-- [x] Market research and concept validation
-- [x] Design system and UX flows
-- [x] Technology stack selection
-- [ ] Core story generation engine
-- [ ] Basic mobile app UI
-- [ ] User authentication and profiles
-- [ ] PDF export functionality
-
-### Phase 2: Enhanced Features (Months 5-8)
-- [ ] Draw Your Hero feature
-- [ ] Photo-to-character conversion
-- [ ] Enhanced interactivity
-- [ ] Video story format
-- [ ] Physical book ordering
-
-### Phase 3: Advanced Features (Months 9-12)
-- [ ] Voice interaction
-- [ ] Educator dashboard
-- [ ] Advanced analytics
-- [ ] International expansion
-- [ ] Community features
-
-## 📞 Contact
-
-- **Project Lead**: [Your Name]
-- **Email**: [your.email@example.com]
-- **Website**: [https://storycanvas.app](https://storycanvas.app) *(coming soon)*
+- Your Name - Initial work
 
 ## 🙏 Acknowledgments
 
-- OpenAI for GPT and DALL-E APIs
-- ElevenLabs for voice generation
-- All contributors and beta testers
-
----
-
-**Made with ❤️ for families who love stories**
-
+- OpenAI for GPT-4 and DALL-E 3 APIs
+- React Native & Expo community
+- Prisma for excellent ORM

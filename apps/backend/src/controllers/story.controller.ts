@@ -3,10 +3,12 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { OpenAIService } from '../services/openai.service';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
+import { cacheService } from '../lib/redis';
 
 const openaiService = new OpenAIService();
 
 export class StoryController {
+  private cacheKeyPrefix = 'story';
   async generateStory(req: AuthRequest, res: Response) {
     try {
       const userId = req.userId!;
@@ -51,10 +53,31 @@ export class StoryController {
   async getStories(req: AuthRequest, res: Response) {
     try {
       const userId = req.userId!;
+      
+      // Pagination parameters
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const skip = (page - 1) * limit;
 
+      // Cache key with pagination
+      const cacheKey = `${this.cacheKeyPrefix}:user:${userId}:list:page:${page}:limit:${limit}`;
+
+      // Try cache first
+      const cached = await cacheService.get(cacheKey);
+      if (cached) {
+        logger.debug(`Cache hit for stories list: ${cacheKey}`);
+        return res.json(cached);
+      }
+
+      // Get total count for pagination
+      const total = await prisma.story.count({ where: { userId } });
+
+      // Fetch stories with pagination
       const stories = await prisma.story.findMany({
         where: { userId },
         orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
         include: {
           characters: {
             include: {
@@ -64,7 +87,21 @@ export class StoryController {
         },
       });
 
-      res.json(stories);
+      const response = {
+        stories,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasMore: skip + stories.length < total,
+        },
+      };
+
+      // Cache for 3 minutes
+      await cacheService.set(cacheKey, response, cacheService.getTTL().short * 3);
+
+      res.json(response);
     } catch (error) {
       logger.error('Get stories error:', error);
       res.status(500).json({ error: 'Failed to fetch stories' });
@@ -75,6 +112,14 @@ export class StoryController {
     try {
       const userId = req.userId!;
       const { id } = req.params;
+      const cacheKey = `${this.cacheKeyPrefix}:${id}`;
+
+      // Try cache first
+      const cached = await cacheService.get(cacheKey);
+      if (cached) {
+        logger.debug(`Cache hit for story: ${cacheKey}`);
+        return res.json(cached);
+      }
 
       const story = await prisma.story.findFirst({
         where: { id, userId },
@@ -90,6 +135,9 @@ export class StoryController {
       if (!story) {
         return res.status(404).json({ error: 'Story not found' });
       }
+
+      // Cache for 10 minutes
+      await cacheService.set(cacheKey, story, cacheService.getTTL().medium * 2);
 
       res.json(story);
     } catch (error) {
@@ -119,6 +167,10 @@ export class StoryController {
         data: updates,
       });
 
+      // Invalidate cache
+      await cacheService.del(`${this.cacheKeyPrefix}:${id}`);
+      await cacheService.delPattern(`${this.cacheKeyPrefix}:user:${userId}:list:*`);
+
       res.json(story);
     } catch (error) {
       logger.error('Update story error:', error);
@@ -142,6 +194,10 @@ export class StoryController {
 
       // Delete story
       await prisma.story.delete({ where: { id } });
+
+      // Invalidate cache
+      await cacheService.del(`${this.cacheKeyPrefix}:${id}`);
+      await cacheService.delPattern(`${this.cacheKeyPrefix}:user:${userId}:list:*`);
 
       res.json({ message: 'Story deleted successfully' });
     } catch (error) {

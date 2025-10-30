@@ -42,6 +42,10 @@ model Story {
 
   characters  StoryCharacter[]
 
+  @@index([userId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([genre])
+  @@index([language])
   @@map("stories")
 }
 
@@ -58,6 +62,8 @@ model Character {
 
   stories     StoryCharacter[]
 
+  @@index([userId])
+  @@index([userId, createdAt(sort: Desc)])
   @@map("characters")
 }
 
