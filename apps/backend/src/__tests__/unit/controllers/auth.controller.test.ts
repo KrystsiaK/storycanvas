@@ -77,26 +77,7 @@ describe('AuthController', () => {
       });
     });
 
-    it('should return 400 if required fields are missing', async () => {
-      mockRequest.body = { email: 'test@example.com' };
-
-      await authController.register(mockRequest as Request, mockResponse as Response);
-
-      expect(statusMock).toHaveBeenCalledWith(400);
-      expect(jsonMock).toHaveBeenCalledWith({ error: 'All fields are required' });
-    });
-
-    it('should return 400 if password is too short', async () => {
-      mockRequest.body = {
-        ...validRegisterData,
-        password: 'short',
-      };
-
-      await authController.register(mockRequest as Request, mockResponse as Response);
-
-      expect(statusMock).toHaveBeenCalledWith(400);
-      expect(jsonMock).toHaveBeenCalledWith({ error: 'Password must be at least 8 characters' });
-    });
+    // Note: Field validation is now handled by Joi middleware
 
     it('should return 400 if email already exists', async () => {
       mockRequest.body = validRegisterData;
@@ -158,14 +139,7 @@ describe('AuthController', () => {
       });
     });
 
-    it('should return 400 if email or password is missing', async () => {
-      mockRequest.body = { email: 'test@example.com' };
-
-      await authController.login(mockRequest as Request, mockResponse as Response);
-
-      expect(statusMock).toHaveBeenCalledWith(400);
-      expect(jsonMock).toHaveBeenCalledWith({ error: 'Email and password are required' });
-    });
+    // Note: Field validation is now handled by Joi middleware
 
     it('should return 401 if user not found', async () => {
       mockRequest.body = validLoginData;
@@ -220,14 +194,7 @@ describe('AuthController', () => {
       expect(jsonMock).toHaveBeenCalledWith({ token: newToken });
     });
 
-    it('should return 400 if token is missing', async () => {
-      mockRequest.body = {};
-
-      await authController.refreshToken(mockRequest as Request, mockResponse as Response);
-
-      expect(statusMock).toHaveBeenCalledWith(400);
-      expect(jsonMock).toHaveBeenCalledWith({ error: 'Token is required' });
-    });
+    // Note: Field validation is now handled by Joi middleware
 
     it('should return 401 if token is invalid', async () => {
       mockRequest.body = { token: 'invalid_token' };

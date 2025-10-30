@@ -31,7 +31,7 @@ describe('Auth E2E Tests', () => {
       const newUser = {
         name: 'John Doe',
         email: 'john@example.com',
-        password: 'password123',
+        password: 'Password123',
       };
 
       const mockCreatedUser = {
@@ -60,7 +60,7 @@ describe('Auth E2E Tests', () => {
       const existingUser = {
         name: 'Jane Doe',
         email: 'existing@example.com',
-        password: 'password123',
+        password: 'Password123',
       };
 
       (prisma.user.findUnique as jest.Mock).mockResolvedValue({
@@ -83,10 +83,11 @@ describe('Auth E2E Tests', () => {
         .send({ email: 'test@example.com' })
         .expect(400);
 
-      expect(response.body.error).toBe('All fields are required');
+      expect(response.body.error).toBe('Validation Error');
+      expect(response.body.details).toBeDefined();
     });
 
-    it('should return 400 if password is too short', async () => {
+    it('should return 400 if password does not meet requirements', async () => {
       const response = await request(app)
         .post('/api/v1/auth/register')
         .send({
@@ -96,7 +97,8 @@ describe('Auth E2E Tests', () => {
         })
         .expect(400);
 
-      expect(response.body.error).toBe('Password must be at least 8 characters');
+      expect(response.body.error).toBe('Validation Error');
+      expect(response.body.details).toBeDefined();
     });
   });
 
@@ -104,7 +106,7 @@ describe('Auth E2E Tests', () => {
     it('should login successfully with valid credentials', async () => {
       const loginData = {
         email: 'test@example.com',
-        password: 'password123',
+        password: 'Password123',
       };
 
       const mockUser = {
@@ -138,7 +140,7 @@ describe('Auth E2E Tests', () => {
         .post('/api/v1/auth/login')
         .send({
           email: 'nonexistent@example.com',
-          password: 'password123',
+          password: 'Password123',
         })
         .expect(401);
 
@@ -151,7 +153,8 @@ describe('Auth E2E Tests', () => {
         .send({ email: 'test@example.com' })
         .expect(400);
 
-      expect(response.body.error).toBe('Email and password are required');
+      expect(response.body.error).toBe('Validation Error');
+      expect(response.body.details).toBeDefined();
     });
   });
 
@@ -174,7 +177,8 @@ describe('Auth E2E Tests', () => {
         .send({})
         .expect(400);
 
-      expect(response.body.error).toBe('Token is required');
+      expect(response.body.error).toBe('Validation Error');
+      expect(response.body.details).toBeDefined();
     });
 
     it('should return 401 with invalid token', async () => {

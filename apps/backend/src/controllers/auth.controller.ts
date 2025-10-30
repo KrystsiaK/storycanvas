@@ -9,15 +9,6 @@ export class AuthController {
     try {
       const { name, email, password } = req.body;
 
-      // Validate input
-      if (!name || !email || !password) {
-        return res.status(400).json({ error: 'All fields are required' });
-      }
-
-      if (password.length < 8) {
-        return res.status(400).json({ error: 'Password must be at least 8 characters' });
-      }
-
       // Check if user already exists
       const existingUser = await prisma.user.findUnique({ where: { email } });
       if (existingUser) {
@@ -62,11 +53,6 @@ export class AuthController {
     try {
       const { email, password } = req.body;
 
-      // Validate input
-      if (!email || !password) {
-        return res.status(400).json({ error: 'Email and password are required' });
-      }
-
       // Find user
       const user = await prisma.user.findUnique({ where: { email } });
       if (!user) {
@@ -102,10 +88,6 @@ export class AuthController {
   async refreshToken(req: Request, res: Response) {
     try {
       const { token } = req.body;
-
-      if (!token) {
-        return res.status(400).json({ error: 'Token is required' });
-      }
 
       const secret = process.env.JWT_SECRET!;
       const decoded = jwt.verify(token, secret) as { userId: string };
