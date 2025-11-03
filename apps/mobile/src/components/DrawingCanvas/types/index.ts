@@ -10,6 +10,27 @@ export interface PathData {
 
 export type ToolType = "pen" | "eraser" | "brush" | "marker" | "highlighter";
 
+export type ShapeType = "circle" | "square" | "star" | "heart" | "triangle";
+
+export interface ShapeData {
+  type: ShapeType;
+  x: number;
+  y: number;
+  size: number;
+  color: string;
+  strokeWidth: number;
+  timestamp: number;
+}
+
+export interface StickerData {
+  type: string;
+  x: number;
+  y: number;
+  size: number;
+  rotation: number;
+  timestamp: number;
+}
+
 export interface DrawingCanvasProps {
   visible: boolean;
   onClose: () => void;
@@ -21,12 +42,13 @@ export interface CanvasState {
   strokeWidth: number;
   tool: ToolType;
   opacity: number;
+  backgroundColor: string;
 }
 
 export interface HistoryState {
-  past: PathData[][];
-  present: PathData[];
-  future: PathData[][];
+  past: { paths: PathData[]; shapes: ShapeData[] }[];
+  present: { paths: PathData[]; shapes: ShapeData[] };
+  future: { paths: PathData[]; shapes: ShapeData[] }[];
 }
 
 export interface ToolConfig {
@@ -35,6 +57,12 @@ export interface ToolConfig {
   label: string;
   defaultStrokeWidth: number;
   strokeMultiplier?: number;
+}
+
+export interface ShapeConfig {
+  type: ShapeType;
+  icon: string;
+  label: string;
 }
 
 export interface ColorConfig {

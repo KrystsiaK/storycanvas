@@ -6,18 +6,20 @@ import {
   Rect,
   useCanvasRef,
 } from "@shopify/react-native-skia";
-import { PathData } from "./types";
+import { PathData, ShapeData } from "./types";
 import { pathService } from "./services/pathService";
-import { CANVAS_BACKGROUND_COLOR } from "./utils/constants";
+import { shapeService } from "./services/shapeService";
 
 const { width, height } = Dimensions.get("window");
 
 interface CanvasProps {
   paths: PathData[];
+  shapes: ShapeData[];
   currentPath: any;
   currentColor: string;
   currentStrokeWidth: number;
   currentTool: string;
+  backgroundColor: string;
   panHandlers: any;
   style?: ViewStyle;
   onCanvasReady?: (ref: any) => void;
@@ -25,10 +27,12 @@ interface CanvasProps {
 
 export const Canvas: React.FC<CanvasProps> = ({
   paths,
+  shapes,
   currentPath,
   currentColor,
   currentStrokeWidth,
   currentTool,
+  backgroundColor,
   panHandlers,
   style,
   onCanvasReady,
@@ -50,19 +54,34 @@ export const Canvas: React.FC<CanvasProps> = ({
           y={0}
           width={width}
           height={height}
-          color={CANVAS_BACKGROUND_COLOR}
+          color={backgroundColor}
         />
 
         {/* Completed paths */}
         {paths.map((pathData, index) => (
           <Path
-            key={`${pathData.timestamp}-${index}`}
+            key={`path-${pathData.timestamp}-${index}`}
             path={pathData.path}
             color={pathData.color}
             style="stroke"
             strokeWidth={pathData.strokeWidth}
             strokeCap="round"
             strokeJoin="round"
+          />
+        ))}
+
+        {/* Shapes */}
+        {shapes.map((shapeData, index) => (
+          <Path
+            key={`shape-${shapeData.timestamp}-${index}`}
+            path={shapeService.createShape(
+              shapeData.type,
+              shapeData.x,
+              shapeData.y,
+              shapeData.size
+            )}
+            color={shapeData.color}
+            style="fill"
           />
         ))}
 

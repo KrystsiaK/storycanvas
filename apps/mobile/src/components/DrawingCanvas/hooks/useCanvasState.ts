@@ -4,6 +4,7 @@ import {
   DEFAULT_COLOR,
   DEFAULT_STROKE_WIDTH,
   DEFAULT_TOOL,
+  CANVAS_BACKGROUND_COLOR,
 } from "../utils/constants";
 
 export const useCanvasState = () => {
@@ -12,6 +13,7 @@ export const useCanvasState = () => {
     strokeWidth: DEFAULT_STROKE_WIDTH,
     tool: DEFAULT_TOOL as ToolType,
     opacity: 1,
+    backgroundColor: CANVAS_BACKGROUND_COLOR,
   });
 
   const setColor = useCallback((color: string) => {
@@ -30,6 +32,10 @@ export const useCanvasState = () => {
     setState((prev) => ({ ...prev, opacity }));
   }, []);
 
+  const setBackgroundColor = useCallback((color: string) => {
+    setState((prev) => ({ ...prev, backgroundColor: color }));
+  }, []);
+
   const toggleTool = useCallback((tool: ToolType) => {
     setState((prev) => ({
       ...prev,
@@ -43,6 +49,7 @@ export const useCanvasState = () => {
     setStrokeWidth,
     setTool,
     setOpacity,
+    setBackgroundColor,
     toggleTool,
   };
 };

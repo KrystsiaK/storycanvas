@@ -1,18 +1,29 @@
 import { useState, useCallback, useRef } from "react";
-import { PathData } from "../types";
+import { PathData, ShapeData } from "../types";
 import { MAX_HISTORY_SIZE } from "../utils/constants";
 
-export const useHistory = (initialPaths: PathData[] = []) => {
-  const historyRef = useRef<PathData[][]>([initialPaths]);
+interface HistoryEntry {
+  paths: PathData[];
+  shapes: ShapeData[];
+}
+
+export const useHistory = (initialState: HistoryEntry = { paths: [], shapes: [] }) => {
+  const historyRef = useRef<HistoryEntry[]>([initialState]);
   const [historyIndex, setHistoryIndex] = useState(0);
 
   const addToHistory = useCallback(
-    (newPaths: PathData[]) => {
+    (newState: HistoryEntry) => {
       // Remove future states if we're not at the end
       historyRef.current = historyRef.current.slice(0, historyIndex + 1);
       
+      // Deep clone to avoid reference issues
+      const clonedState = {
+        paths: [...newState.paths],
+        shapes: [...newState.shapes],
+      };
+      
       // Add new state
-      historyRef.current.push(newPaths);
+      historyRef.current.push(clonedState);
       
       // Limit history size
       if (historyRef.current.length > MAX_HISTORY_SIZE) {
@@ -24,7 +35,7 @@ export const useHistory = (initialPaths: PathData[] = []) => {
     [historyIndex]
   );
 
-  const undo = useCallback((): PathData[] | null => {
+  const undo = useCallback((): HistoryEntry | null => {
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1;
       setHistoryIndex(newIndex);
@@ -33,7 +44,7 @@ export const useHistory = (initialPaths: PathData[] = []) => {
     return null;
   }, [historyIndex]);
 
-  const redo = useCallback((): PathData[] | null => {
+  const redo = useCallback((): HistoryEntry | null => {
     if (historyIndex < historyRef.current.length - 1) {
       const newIndex = historyIndex + 1;
       setHistoryIndex(newIndex);
@@ -43,7 +54,7 @@ export const useHistory = (initialPaths: PathData[] = []) => {
   }, [historyIndex]);
 
   const clear = useCallback(() => {
-    historyRef.current = [[]];
+    historyRef.current = [{ paths: [], shapes: [] }];
     setHistoryIndex(0);
   }, []);
 

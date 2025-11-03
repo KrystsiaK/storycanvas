@@ -3,16 +3,21 @@ import { View, StyleSheet } from "react-native";
 import { ToolButton } from "./ToolButton";
 import { ColorPicker } from "./ColorPicker";
 import { BrushSizePicker } from "./BrushSizePicker";
-import { ToolType, ToolConfig } from "../types";
-import { COLORS, BRUSH_SIZES, TOOLS, ERROR_COLOR } from "../utils/constants";
+import { ShapeSelector } from "./ShapeSelector";
+import { BackgroundSelector } from "./BackgroundSelector";
+import { ToolType, ToolConfig, ShapeType } from "../types";
+import { COLORS, BRUSH_SIZES, TOOLS, SHAPES, BACKGROUND_COLORS, ERROR_COLOR } from "../utils/constants";
 
 interface ToolbarProps {
   selectedTool: ToolType;
   selectedColor: string;
   strokeWidth: number;
+  backgroundColor: string;
   onToolSelect: (tool: ToolType) => void;
   onColorSelect: (color: string) => void;
   onStrokeWidthSelect: (width: number) => void;
+  onBackgroundColorSelect: (color: string) => void;
+  onShapeSelect: (shape: ShapeType) => void;
   onUndo: () => void;
   onRedo: () => void;
   onClear: () => void;
@@ -24,9 +29,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   selectedTool,
   selectedColor,
   strokeWidth,
+  backgroundColor,
   onToolSelect,
   onColorSelect,
   onStrokeWidthSelect,
+  onBackgroundColorSelect,
+  onShapeSelect,
   onUndo,
   onRedo,
   onClear,
@@ -35,11 +43,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 }) => {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showStrokePicker, setShowStrokePicker] = useState(false);
+  const [showShapeSelector, setShowShapeSelector] = useState(false);
+  const [showBackgroundSelector, setShowBackgroundSelector] = useState(false);
 
   const handleColorSelect = (color: string) => {
     onColorSelect(color);
     setShowColorPicker(false);
-    // Switch to pen when selecting color
     if (selectedTool === "eraser") {
       onToolSelect("pen");
     }
@@ -52,8 +61,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Action buttons row */}
+      {/* Main tools row */}
       <View style={styles.row}>
+        {TOOLS.map((tool: ToolConfig) => (
+          <ToolButton
+            key={tool.type}
+            icon={tool.icon as any}
+            label={tool.label}
+            onPress={() => onToolSelect(tool.type)}
+            isActive={selectedTool === tool.type}
+          />
+        ))}
+
         <ToolButton
           icon="undo"
           label="Undo"
@@ -66,17 +85,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           onPress={onRedo}
           color={canRedo ? "#333" : "#ccc"}
         />
-
-        {TOOLS.map((tool: ToolConfig) => (
-          <ToolButton
-            key={tool.type}
-            icon={tool.icon as any}
-            label={tool.label}
-            onPress={() => onToolSelect(tool.type)}
-            isActive={selectedTool === tool.type}
-          />
-        ))}
-
         <ToolButton
           icon="delete"
           label="Clear"
@@ -85,7 +93,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         />
       </View>
 
-      {/* Color and size pickers row */}
+      {/* Pickers row */}
       <View style={styles.row}>
         <ColorPicker
           colors={COLORS}
@@ -102,6 +110,24 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           isExpanded={showStrokePicker}
           onToggle={() => setShowStrokePicker(!showStrokePicker)}
           previewColor={selectedColor}
+        />
+      </View>
+
+      {/* Fun features row */}
+      <View style={styles.row}>
+        <ShapeSelector
+          shapes={SHAPES}
+          onShapeSelect={onShapeSelect}
+          isExpanded={showShapeSelector}
+          onToggle={() => setShowShapeSelector(!showShapeSelector)}
+        />
+
+        <BackgroundSelector
+          colors={BACKGROUND_COLORS}
+          selectedColor={backgroundColor}
+          onColorSelect={onBackgroundColorSelect}
+          isExpanded={showBackgroundSelector}
+          onToggle={() => setShowBackgroundSelector(!showBackgroundSelector)}
         />
       </View>
     </View>
