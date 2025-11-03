@@ -1,32 +1,24 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../utils/database';
+import { logger } from '../utils/logger';
+import { env } from '../utils/env';
 
 export class AuthController {
   async register(req: Request, res: Response) {
     try {
       const { name, email, password } = req.body;
 
-      // Validate input
-      if (!name || !email || !password) {
-        return res.status(400).json({ error: 'All fields are required' });
-      }
-
-      if (password.length < 8) {
-        return res.status(400).json({ error: 'Password must be at least 8 characters' });
-      }
-
       // Check if user already exists
       const existingUser = await prisma.user.findUnique({ where: { email } });
       if (existingUser) {
+        logger.warn('Registration attempt with existing email', { email });
         return res.status(400).json({ error: 'Email already registered' });
       }
 
-      // Hash password
-      const hashedPassword = await bcrypt.hash(password, 10);
+      // Hash password with 12 rounds (more secure than default 10)
+      const hashedPassword = await bcrypt.hash(password, 12);
 
       // Create user
       const user = await prisma.user.create({
@@ -44,17 +36,17 @@ export class AuthController {
         },
       });
 
-      // Generate JWT token
-      const secret = process.env.JWT_SECRET || 'your-secret-key';
-      const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
-      const token = jwt.sign({ userId: user.id }, secret, { expiresIn } as jwt.SignOptions);
+      // Generate JWT token using validated env vars
+      const token = jwt.sign({ userId: user.id }, env.JWT_SECRET, { expiresIn: '7d' });
+
+      logger.info('User registered successfully', { userId: user.id, email: user.email });
 
       res.status(201).json({
         user,
         token,
       });
     } catch (error) {
-      console.error('Register error:', error);
+      logger.error('Registration failed', { error, email: req.body?.email });
       res.status(500).json({ error: 'Registration failed' });
     }
   }
@@ -63,27 +55,24 @@ export class AuthController {
     try {
       const { email, password } = req.body;
 
-      // Validate input
-      if (!email || !password) {
-        return res.status(400).json({ error: 'Email and password are required' });
-      }
-
       // Find user
       const user = await prisma.user.findUnique({ where: { email } });
       if (!user) {
+        logger.warn('Login attempt with non-existent email', { email });
         return res.status(401).json({ error: 'Invalid credentials' });
       }
 
       // Verify password
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (!isValidPassword) {
+        logger.warn('Login attempt with invalid password', { userId: user.id, email });
         return res.status(401).json({ error: 'Invalid credentials' });
       }
 
-      // Generate JWT token
-      const secret = process.env.JWT_SECRET || 'your-secret-key';
-      const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
-      const token = jwt.sign({ userId: user.id }, secret, { expiresIn } as jwt.SignOptions);
+      // Generate JWT token using validated env vars
+      const token = jwt.sign({ userId: user.id }, env.JWT_SECRET, { expiresIn: '7d' });
+
+      logger.info('User logged in successfully', { userId: user.id, email: user.email });
 
       res.json({
         user: {
@@ -95,7 +84,7 @@ export class AuthController {
         token,
       });
     } catch (error) {
-      console.error('Login error:', error);
+      logger.error('Login failed', { error, email: req.body?.email });
       res.status(500).json({ error: 'Login failed' });
     }
   }
@@ -104,19 +93,27 @@ export class AuthController {
     try {
       const { token } = req.body;
 
-      if (!token) {
-        return res.status(400).json({ error: 'Token is required' });
+      const decoded = jwt.verify(token, env.JWT_SECRET) as { userId: string };
+
+      // Verify user still exists
+      const user = await prisma.user.findUnique({ 
+        where: { id: decoded.userId },
+        select: { id: true }
+      });
+
+      if (!user) {
+        logger.warn('Token refresh attempted for non-existent user', { userId: decoded.userId });
+        return res.status(401).json({ error: 'Invalid token' });
       }
 
-      const secret = process.env.JWT_SECRET || 'your-secret-key';
-      const decoded = jwt.verify(token, secret) as { userId: string };
-
       // Generate new token
-      const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
-      const newToken = jwt.sign({ userId: decoded.userId }, secret, { expiresIn } as jwt.SignOptions);
+      const newToken = jwt.sign({ userId: decoded.userId }, env.JWT_SECRET, { expiresIn: '7d' });
+
+      logger.info('Token refreshed successfully', { userId: decoded.userId });
 
       res.json({ token: newToken });
     } catch (error) {
+      logger.warn('Token refresh failed', { error });
       res.status(401).json({ error: 'Invalid token' });
     }
   }
@@ -124,7 +121,7 @@ export class AuthController {
   async logout(req: Request, res: Response) {
     // In a stateless JWT setup, logout is handled client-side
     // Here we could add token to a blacklist if needed
+    logger.info('User logged out');
     res.json({ message: 'Logged out successfully' });
   }
 }
-

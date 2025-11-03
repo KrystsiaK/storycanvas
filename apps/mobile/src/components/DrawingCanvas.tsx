@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState, useCallback, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -8,11 +8,20 @@ import {
   Alert,
   Modal,
   Dimensions,
-} from 'react-native';
-import SketchCanvas from '@terrylinla/react-native-sketch-canvas';
-import { MaterialIcons } from '@expo/vector-icons';
+  PanResponder,
+} from "react-native";
+import {
+  Canvas,
+  Path,
+  Skia,
+  SkPath,
+  useCanvasRef,
+  Rect,
+} from "@shopify/react-native-skia";
+import { MaterialIcons } from "@expo/vector-icons";
+// import * as FileSystem from "expo-file-system";
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window");
 
 interface DrawingCanvasProps {
   visible: boolean;
@@ -20,20 +29,16 @@ interface DrawingCanvasProps {
   onSave?: (imagePath: string) => void;
 }
 
+interface PathData {
+  path: SkPath;
+  color: string;
+  strokeWidth: number;
+}
+
 const COLORS = [
-  '#000000', // Black
-  '#FF0000', // Red
-  '#00FF00', // Green
-  '#0000FF', // Blue
-  '#FFFF00', // Yellow
-  '#FF00FF', // Magenta
-  '#00FFFF', // Cyan
-  '#FFA500', // Orange
-  '#800080', // Purple
-  '#FFC0CB', // Pink
-  '#A52A2A', // Brown
-  '#808080', // Gray
-  '#FFFFFF', // White
+  "#000000", "#FF0000", "#00FF00", "#0000FF",
+  "#FFFF00", "#FF00FF", "#00FFFF", "#FFA500",
+  "#800080", "#FFC0CB", "#A52A2A", "#808080", "#FFFFFF",
 ];
 
 const STROKE_WIDTHS = [2, 5, 10, 15, 20, 30];
@@ -43,64 +48,143 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
   onClose,
   onSave,
 }) => {
-  const canvasRef = useRef<any>(null);
-  const [selectedColor, setSelectedColor] = useState('#000000');
+  const canvasRef = useCanvasRef() as any;
+  const [paths, setPaths] = useState<PathData[]>([]);
+  const [selectedColor, setSelectedColor] = useState("#000000");
   const [strokeWidth, setStrokeWidth] = useState(5);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showStrokePicker, setShowStrokePicker] = useState(false);
-  const [tool, setTool] = useState<'pen' | 'eraser'>('pen');
+  const [tool, setTool] = useState<"pen" | "eraser">("pen");
+  const [currentPath, setCurrentPath] = useState<SkPath | null>(null);
 
-  const handleUndo = () => {
-    canvasRef.current?.undo();
-  };
+  // история undo/redo
+  const historyRef = useRef<PathData[][]>([[]]);
+  const [historyIndex, setHistoryIndex] = useState(0);
 
-  const handleRedo = () => {
-    canvasRef.current?.redo();
-  };
+  // Refs для актуальных значений в PanResponder
+  const pathsRef = useRef(paths);
+  const toolRef = useRef(tool);
+  const selectedColorRef = useRef(selectedColor);
+  const strokeWidthRef = useRef(strokeWidth);
+  const currentPathRef = useRef(currentPath);
 
-  const handleClear = () => {
-    Alert.alert(
-      'Clear Canvas',
-      'Are you sure you want to clear everything?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clear',
-          style: 'destructive',
-          onPress: () => canvasRef.current?.clear(),
-        },
-      ]
-    );
-  };
+  // Обновляем refs при изменении state
+  pathsRef.current = paths;
+  toolRef.current = tool;
+  selectedColorRef.current = selectedColor;
+  strokeWidthRef.current = strokeWidth;
+  currentPathRef.current = currentPath;
 
-  const handleSave = async () => {
-    try {
-      const result = await canvasRef.current?.save(
-        'png',
-        false,
-        'StoryCanvas',
-        `drawing_${Date.now()}`,
-        true,
-        false,
-        false
-      );
-      
-      if (result) {
-        Alert.alert('Success', 'Drawing saved successfully!');
-        if (onSave) {
-          onSave(result.path);
+  const addToHistory = useCallback(
+    (newPaths: PathData[]) => {
+      historyRef.current = historyRef.current.slice(0, historyIndex + 1);
+      historyRef.current.push(newPaths);
+      setHistoryIndex(historyRef.current.length - 1);
+    },
+    [historyIndex]
+  );
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (e) => {
+        const { locationX, locationY } = e.nativeEvent;
+        const p = Skia.Path.Make();
+        p.moveTo(locationX, locationY);
+        currentPathRef.current = p;
+        setCurrentPath(p);
+      },
+      onPanResponderMove: (e) => {
+        const { locationX, locationY } = e.nativeEvent;
+        const current = currentPathRef.current;
+        if (current) {
+          current.lineTo(locationX, locationY);
+          const copied = current.copy();
+          currentPathRef.current = copied;
+          setCurrentPath(copied);
         }
-      }
-    } catch (error) {
-      console.error('Error saving drawing:', error);
-      Alert.alert('Error', 'Failed to save drawing');
+      },
+      onPanResponderRelease: () => {
+        const current = currentPathRef.current;
+        if (current) {
+          const newPaths = [
+            ...pathsRef.current,
+            {
+              path: current,
+              color: toolRef.current === "eraser" ? "#FFFFFF" : selectedColorRef.current,
+              strokeWidth: toolRef.current === "eraser" ? strokeWidthRef.current * 3 : strokeWidthRef.current,
+            },
+          ];
+          setPaths(newPaths);
+          historyRef.current = historyRef.current.slice(0, historyIndex + 1);
+          historyRef.current.push(newPaths);
+          setHistoryIndex(historyRef.current.length - 1);
+          currentPathRef.current = null;
+          setCurrentPath(null);
+        }
+      },
+    })
+  ).current;
+
+  const handleUndo = useCallback(() => {
+    if (historyIndex > 0) {
+      const newIndex = historyIndex - 1;
+      setHistoryIndex(newIndex);
+      setPaths(historyRef.current[newIndex]);
     }
-  };
+  }, [historyIndex]);
+
+  const handleRedo = useCallback(() => {
+    if (historyIndex < historyRef.current.length - 1) {
+      const newIndex = historyIndex + 1;
+      setHistoryIndex(newIndex);
+      setPaths(historyRef.current[newIndex]);
+    }
+  }, [historyIndex]);
+
+  const handleClear = useCallback(() => {
+    Alert.alert("Clear Canvas", "Are you sure you want to clear everything?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Clear",
+        style: "destructive",
+        onPress: () => {
+          setPaths([]);
+          historyRef.current = [[]];
+          setHistoryIndex(0);
+        },
+      },
+    ]);
+  }, []);
+
+  const handleSave = useCallback(async () => {
+    try {
+      const image = canvasRef.current?.makeImageSnapshot();
+      if (!image) {
+        Alert.alert("Error", "No drawing to save");
+        return;
+      }
+
+      const base64 = image.encodeToBase64();
+      
+      // TODO: implement file saving with expo-file-system
+      // const fileUri = `${FileSystem.documentDirectory}drawing_${Date.now()}.png`;
+      // await FileSystem.writeAsStringAsync(fileUri, base64, {
+      //   encoding: FileSystem.EncodingType.Base64,
+      // });
+
+      Alert.alert("Success", "Drawing captured! (Save to file not implemented yet)");
+      onSave?.(`data:image/png;base64,${base64}`);
+    } catch (error) {
+      Alert.alert("Error", "Failed to save drawing");
+    }
+  }, [onSave, canvasRef]);
 
   const selectColor = (color: string) => {
     setSelectedColor(color);
     setShowColorPicker(false);
-    setTool('pen');
+    setTool("pen");
   };
 
   const selectStrokeWidth = (width: number) => {
@@ -109,11 +193,7 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
   };
 
   const toggleEraser = () => {
-    if (tool === 'eraser') {
-      setTool('pen');
-    } else {
-      setTool('eraser');
-    }
+    setTool((prev) => (prev === "eraser" ? "pen" : "eraser"));
   };
 
   return (
@@ -136,69 +216,69 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
         </View>
 
         {/* Canvas */}
-        <View style={styles.canvasContainer}>
-          <SketchCanvas
-            ref={canvasRef}
-            style={styles.canvas}
-            strokeColor={tool === 'eraser' ? '#FFFFFF' : selectedColor}
-            strokeWidth={tool === 'eraser' ? strokeWidth * 3 : strokeWidth}
-            user="user_001"
-            touchEnabled={true}
-          />
+        <View style={styles.canvasContainer} {...panResponder.panHandlers}>
+          <Canvas ref={canvasRef} style={styles.canvas} pointerEvents="none">
+            <Rect x={0} y={0} width={width} height={height} color="white" />
+            {paths.map((p, i) => (
+              <Path
+                key={i}
+                path={p.path}
+                color={p.color}
+                style="stroke"
+                strokeWidth={p.strokeWidth}
+                strokeCap="round"
+                strokeJoin="round"
+              />
+            ))}
+            {currentPath && (
+              <Path
+                path={currentPath}
+                color={tool === "eraser" ? "#FFFFFF" : selectedColor}
+                style="stroke"
+                strokeWidth={tool === "eraser" ? strokeWidth * 3 : strokeWidth}
+                strokeCap="round"
+                strokeJoin="round"
+              />
+            )}
+          </Canvas>
         </View>
 
         {/* Toolbar */}
         <View style={styles.toolbar}>
-          {/* Main Actions Row */}
           <View style={styles.toolRow}>
-            <TouchableOpacity
-              style={styles.toolButton}
-              onPress={handleUndo}
-            >
+            <TouchableOpacity style={styles.toolButton} onPress={handleUndo}>
               <MaterialIcons name="undo" size={24} color="#333" />
               <Text style={styles.toolLabel}>Undo</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.toolButton}
-              onPress={handleRedo}
-            >
+            <TouchableOpacity style={styles.toolButton} onPress={handleRedo}>
               <MaterialIcons name="redo" size={24} color="#333" />
               <Text style={styles.toolLabel}>Redo</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[
-                styles.toolButton,
-                tool === 'pen' && styles.toolButtonActive,
-              ]}
-              onPress={() => setTool('pen')}
+              style={[styles.toolButton, tool === "pen" && styles.toolButtonActive]}
+              onPress={() => setTool("pen")}
             >
-              <MaterialIcons name="create" size={24} color={tool === 'pen' ? '#6366f1' : '#333'} />
-              <Text style={[styles.toolLabel, tool === 'pen' && styles.toolLabelActive]}>Pen</Text>
+              <MaterialIcons name="create" size={24} color={tool === "pen" ? "#6366f1" : "#333"} />
+              <Text style={[styles.toolLabel, tool === "pen" && styles.toolLabelActive]}>Pen</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[
-                styles.toolButton,
-                tool === 'eraser' && styles.toolButtonActive,
-              ]}
+              style={[styles.toolButton, tool === "eraser" && styles.toolButtonActive]}
               onPress={toggleEraser}
             >
-              <MaterialIcons name="clear" size={24} color={tool === 'eraser' ? '#6366f1' : '#333'} />
-              <Text style={[styles.toolLabel, tool === 'eraser' && styles.toolLabelActive]}>Eraser</Text>
+              <MaterialIcons name="clear" size={24} color={tool === "eraser" ? "#6366f1" : "#333"} />
+              <Text style={[styles.toolLabel, tool === "eraser" && styles.toolLabelActive]}>Eraser</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.toolButton}
-              onPress={handleClear}
-            >
+            <TouchableOpacity style={styles.toolButton} onPress={handleClear}>
               <MaterialIcons name="delete" size={24} color="#ef4444" />
-              <Text style={[styles.toolLabel, { color: '#ef4444' }]}>Clear</Text>
+              <Text style={[styles.toolLabel, { color: "#ef4444" }]}>Clear</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Color Picker Row */}
+          {/* Color + size */}
           <View style={styles.toolRow}>
             <TouchableOpacity
               style={styles.colorPickerButton}
@@ -206,10 +286,10 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
             >
               <View style={[styles.colorPreview, { backgroundColor: selectedColor }]} />
               <Text style={styles.toolLabel}>Color</Text>
-              <MaterialIcons 
-                name={showColorPicker ? "keyboard-arrow-up" : "keyboard-arrow-down"} 
-                size={20} 
-                color="#666" 
+              <MaterialIcons
+                name={showColorPicker ? "keyboard-arrow-up" : "keyboard-arrow-down"}
+                size={20}
+                color="#666"
               />
             </TouchableOpacity>
 
@@ -228,21 +308,16 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
                 />
               </View>
               <Text style={styles.toolLabel}>Size: {strokeWidth}px</Text>
-              <MaterialIcons 
-                name={showStrokePicker ? "keyboard-arrow-up" : "keyboard-arrow-down"} 
-                size={20} 
-                color="#666" 
+              <MaterialIcons
+                name={showStrokePicker ? "keyboard-arrow-up" : "keyboard-arrow-down"}
+                size={20}
+                color="#666"
               />
             </TouchableOpacity>
           </View>
 
-          {/* Color Palette */}
           {showColorPicker && (
-            <ScrollView 
-              horizontal 
-              style={styles.colorPalette}
-              showsHorizontalScrollIndicator={false}
-            >
+            <ScrollView horizontal style={styles.colorPalette} showsHorizontalScrollIndicator={false}>
               {COLORS.map((color) => (
                 <TouchableOpacity
                   key={color}
@@ -254,38 +329,34 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
                   onPress={() => selectColor(color)}
                 >
                   {selectedColor === color && (
-                    <MaterialIcons name="check" size={20} color={color === '#FFFFFF' ? '#000' : '#fff'} />
+                    <MaterialIcons
+                      name="check"
+                      size={20}
+                      color={color === "#FFFFFF" ? "#000" : "#fff"}
+                    />
                   )}
                 </TouchableOpacity>
               ))}
             </ScrollView>
           )}
 
-          {/* Stroke Width Picker */}
           {showStrokePicker && (
-            <ScrollView 
-              horizontal 
-              style={styles.strokePalette}
-              showsHorizontalScrollIndicator={false}
-            >
-              {STROKE_WIDTHS.map((width) => (
+            <ScrollView horizontal style={styles.strokePalette} showsHorizontalScrollIndicator={false}>
+              {STROKE_WIDTHS.map((w) => (
                 <TouchableOpacity
-                  key={width}
-                  style={[
-                    styles.strokeOption,
-                    strokeWidth === width && styles.strokeOptionSelected,
-                  ]}
-                  onPress={() => selectStrokeWidth(width)}
+                  key={w}
+                  style={[styles.strokeOption, strokeWidth === w && styles.strokeOptionSelected]}
+                  onPress={() => selectStrokeWidth(w)}
                 >
                   <View
                     style={{
-                      width: width,
-                      height: width,
-                      borderRadius: width / 2,
-                      backgroundColor: '#333',
+                      width: w,
+                      height: w,
+                      borderRadius: w / 2,
+                      backgroundColor: "#333",
                     }}
                   />
-                  <Text style={styles.strokeOptionLabel}>{width}px</Text>
+                  <Text style={styles.strokeOptionLabel}>{w}px</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -297,83 +368,48 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
+  container: { flex: 1, backgroundColor: "#f5f5f5" },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#6366f1',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#6366f1",
     paddingTop: 50,
     paddingBottom: 15,
     paddingHorizontal: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
-  headerButton: {
-    padding: 5,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
+  headerButton: { padding: 5 },
+  headerTitle: { fontSize: 20, fontWeight: "bold", color: "#fff" },
   canvasContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     margin: 10,
     borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+    overflow: "hidden",
   },
-  canvas: {
-    flex: 1,
-  },
+  canvas: { flex: 1 },
   toolbar: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     paddingVertical: 10,
     paddingHorizontal: 15,
     borderTopWidth: 1,
-    borderTopColor: '#e5e5e5',
+    borderTopColor: "#e5e5e5",
     paddingBottom: 30,
   },
   toolRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
     marginBottom: 10,
   },
-  toolButton: {
-    alignItems: 'center',
-    padding: 10,
-    borderRadius: 8,
-    minWidth: 60,
-  },
-  toolButtonActive: {
-    backgroundColor: '#eef2ff',
-  },
-  toolLabel: {
-    fontSize: 11,
-    color: '#666',
-    marginTop: 4,
-  },
-  toolLabelActive: {
-    color: '#6366f1',
-    fontWeight: '600',
-  },
+  toolButton: { alignItems: "center", padding: 10, borderRadius: 8, minWidth: 60 },
+  toolButtonActive: { backgroundColor: "#eef2ff" },
+  toolLabel: { fontSize: 11, color: "#666", marginTop: 4 },
+  toolLabelActive: { color: "#6366f1", fontWeight: "600" },
   colorPickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f5f5f5",
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderRadius: 8,
@@ -381,9 +417,9 @@ const styles = StyleSheet.create({
     marginRight: 5,
   },
   strokePickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f5f5f5",
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderRadius: 8,
@@ -396,56 +432,21 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginRight: 10,
     borderWidth: 2,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
   },
-  strokePreview: {
-    width: 30,
-    height: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  colorPalette: {
-    maxHeight: 60,
-    marginTop: 5,
-  },
+  strokePreview: { width: 30, height: 30, justifyContent: "center", alignItems: "center", marginRight: 10 },
+  colorPalette: { maxHeight: 60, marginTop: 5 },
   colorOption: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginHorizontal: 5,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#e5e5e5',
+    width: 50, height: 50, borderRadius: 25, marginHorizontal: 5,
+    justifyContent: "center", alignItems: "center", borderWidth: 3, borderColor: "#e5e5e5",
   },
-  colorOptionSelected: {
-    borderColor: '#6366f1',
-    borderWidth: 3,
-  },
-  strokePalette: {
-    maxHeight: 70,
-    marginTop: 5,
-  },
+  colorOptionSelected: { borderColor: "#6366f1", borderWidth: 3 },
+  strokePalette: { maxHeight: 70, marginTop: 5 },
   strokeOption: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    marginHorizontal: 5,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    borderWidth: 2,
-    borderColor: '#e5e5e5',
+    width: 60, height: 60, borderRadius: 8, marginHorizontal: 5,
+    justifyContent: "center", alignItems: "center", backgroundColor: "#f5f5f5",
+    borderWidth: 2, borderColor: "#e5e5e5",
   },
-  strokeOptionSelected: {
-    backgroundColor: '#eef2ff',
-    borderColor: '#6366f1',
-  },
-  strokeOptionLabel: {
-    fontSize: 10,
-    color: '#666',
-    marginTop: 4,
-  },
+  strokeOptionSelected: { backgroundColor: "#eef2ff", borderColor: "#6366f1" },
+  strokeOptionLabel: { fontSize: 10, color: "#666", marginTop: 4 },
 });
-

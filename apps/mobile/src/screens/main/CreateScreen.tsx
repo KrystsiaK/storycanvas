@@ -6,7 +6,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { useGenerateStoryMutation } from '../../services/api';
 import { setCurrentStory, setGenerating } from '../../store/slices/storySlice';
-// import { DrawingCanvas } from '../../components/DrawingCanvas';
+import { DrawingCanvas } from '../../components/DrawingCanvas';
 
 const GENRES = ['Adventure', 'Fantasy', 'Mystery', 'Friendship', 'Educational', 'Bedtime'];
 const LANGUAGES = ['English', 'Spanish', 'French', 'German', 'Russian', 'Ukrainian'];
@@ -191,14 +191,14 @@ export const CreateScreen = () => {
         Generate Story
       </Button>
 
-      {/* <DrawingCanvas
+      <DrawingCanvas
         visible={showDrawingCanvas}
         onClose={() => setShowDrawingCanvas(false)}
         onSave={(imagePath) => {
           console.log('Drawing saved:', imagePath);
           setShowDrawingCanvas(false);
         }}
-      /> */}
+      />
     </ScrollView>
   );
 };
